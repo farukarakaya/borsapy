@@ -3,6 +3,7 @@
 import warnings
 from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -402,9 +403,8 @@ class IsYatirimProvider(BaseProvider):
                 # Parse date from timestamp (milliseconds) - strip time
                 timestamp = item.get("SHHE_TARIH", 0)
                 if timestamp:
-                    dt = datetime.fromtimestamp(timestamp / 1000).replace(
-                        hour=0, minute=0, second=0, microsecond=0
-                    )
+                    dt = datetime.fromtimestamp(timestamp / 1000, ZoneInfo("Europe/Istanbul"))
+                    dt = dt.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
                 else:
                     continue
 
@@ -484,9 +484,8 @@ class IsYatirimProvider(BaseProvider):
                 # Parse date from timestamp (milliseconds) - strip time
                 timestamp = item.get("SHHE_TARIH", 0)
                 if timestamp:
-                    dt = datetime.fromtimestamp(timestamp / 1000).replace(
-                        hour=0, minute=0, second=0, microsecond=0
-                    )
+                    dt = datetime.fromtimestamp(timestamp / 1000, ZoneInfo("Europe/Istanbul"))
+                    dt = dt.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
                 else:
                     continue
 
@@ -586,14 +585,13 @@ class IsYatirimProvider(BaseProvider):
         # Resolve count
         count = self._resolve_last_n(last_n, quarterly)
 
-        cache_key = f"isyatirim:financial:{symbol}:{statement_type}:{quarterly}:{count}"
+        if financial_group is None:
+            financial_group = self.FINANCIAL_GROUP_INDUSTRIAL
+
+        cache_key = f"isyatirim:financial:{symbol}:{statement_type}:{quarterly}:{count}:{financial_group}"
         cached = self._cache_get(cache_key)
         if cached is not None:
             return cached
-
-        # Determine financial group
-        if financial_group is None:
-            financial_group = self.FINANCIAL_GROUP_INDUSTRIAL
 
         # Generate all periods needed
         current_year = datetime.now().year
