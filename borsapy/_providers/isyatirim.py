@@ -736,7 +736,7 @@ class IsYatirimProvider(BaseProvider):
         quarterly: bool = False,
         statement_type: str | None = None,
     ) -> pd.DataFrame:
-        """Fetch financial data for up to 5 periods and filter by statement type."""
+        """Fetch financial data for up to four periods and filter by statement type."""
         url = f"{self.BASE_URL}/Data.aspx/MaliTablo"
 
         # Build params with multiple year/period pairs
@@ -746,7 +746,10 @@ class IsYatirimProvider(BaseProvider):
             "financialGroup": financial_group,
         }
 
-        for i, (year, period) in enumerate(periods[:self._MAX_PERIODS_PER_CALL], 1):
+        # MaliTablo requires all period slots. Pad the request, not the parsed columns.
+        requested = periods[:self._MAX_PERIODS_PER_CALL]
+        padded = requested + [requested[-1]] * (self._MAX_PERIODS_PER_CALL - len(requested))
+        for i, (year, period) in enumerate(padded, 1):
             params[f"year{i}"] = year
             params[f"period{i}"] = period
 
